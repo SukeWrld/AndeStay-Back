@@ -1,5 +1,8 @@
 package cl.duoc.andesstay.reservations.service;
 
+import cl.duoc.andesstay.reservations.dto.CrearReservaRequest;
+import cl.duoc.andesstay.reservations.dto.ReservaResponse;
+import cl.duoc.andesstay.reservations.mapper.ReservaMapper;
 import cl.duoc.andesstay.reservations.model.EstadoReserva;
 import cl.duoc.andesstay.reservations.model.Reserva;
 import cl.duoc.andesstay.reservations.repository.ReservaRepository;
@@ -11,28 +14,27 @@ import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class ReservaService {
 
     private final ReservaRepository reservaRepository;
+    private final ReservaMapper reservaMapper;
 
-    // ==================== CREAR ====================
     @Transactional
-    public Reserva crear(Reserva reserva) {
-        // Validación básica de fechas
-        if (reserva.getFechaSalida().isBefore(reserva.getFechaEntrada()) ||
-            reserva.getFechaSalida().isEqual(reserva.getFechaEntrada())) {
+    public ReservaResponse crear(CrearReservaRequest request, String usuario) {
+        if (request.getFechaSalida().isBefore(request.getFechaEntrada()) ||
+            request.getFechaSalida().isEqual(request.getFechaEntrada())) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "La fecha de salida debe ser posterior a la fecha de entrada");
         }
 
-        // Validar que no haya solapamiento (overbooking)
         List<Reserva> solapadas = reservaRepository.findReservasSolapadas(
-                reserva.getUnidadId(),
-                reserva.getFechaEntrada(),
-                reserva.getFechaSalida()
+                request.getUnidadId(),
+                request.getFechaEntrada(),
+                request.getFechaSalida()
         );
 
         if (!solapadas.isEmpty()) {
@@ -40,71 +42,73 @@ public class ReservaService {
                     "La unidad no está disponible en las fechas seleccionadas");
         }
 
+        Reserva reserva = reservaMapper.toEntity(request);
         reserva.setEstado(EstadoReserva.CREADA);
-        return reservaRepository.save(reserva);
+        reserva.setCreadoPor(usuario);
+
+        Reserva guardada = reservaRepository.save(reserva);
+        return reservaMapper.toResponse(guardada);
     }
 
-    // ==================== BUSCAR POR ID ====================
     @Transactional(readOnly = true)
-    public Reserva obtenerPorId(Long id) {
-        return reservaRepository.findById(id)
+    public ReservaResponse obtenerPorId(Long id) {
+        Reserva reserva = reservaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Reserva no encontrada con id: " + id));
+        return reservaMapper.toResponse(reserva);
     }
 
-    // ==================== LISTAR CON FILTROS ====================
     @Transactional(readOnly = true)
-    public List<Reserva> listar(EstadoReserva estado, LocalDate from, LocalDate to) {
+    public List<ReservaResponse> listar(EstadoReserva estado, LocalDate from, LocalDate to) {
+        List<Reserva> reservas;
+
         if (estado != null && from != null && to != null) {
-            return reservaRepository.findByEstadoAndFechaEntradaBetween(estado, from, to);
+            reservas = reservaRepository.findByEstadoAndFechaEntradaBetween(estado, from, to);
+        } else if (estado != null) {
+            reservas = reservaRepository.findByEstado(estado);
+        } else if (from != null && to != null) {
+            reservas = reservaRepository.findByFechaEntradaBetween(from, to);
+        } else {
+            reservas = reservaRepository.findAll();
         }
-        if (estado != null) {
-            return reservaRepository.findByEstado(estado);
-        }
-        if (from != null && to != null) {
-            return reservaRepository.findByFechaEntradaBetween(from, to);
-        }
-        return reservaRepository.findAll();
+
+        return reservas.stream()
+                .map(reservaMapper::toResponse)
+                .collect(Collectors.toList());
     }
 
-    // ==================== CAMBIAR ESTADO ====================
     @Transactional
-    public Reserva cambiarEstado(Long id, EstadoReserva nuevoEstado, String usuario) {
-        Reserva reserva = obtenerPorId(id);
-        EstadoReserva estadoActual = reserva.getEstado();
+    public ReservaResponse cambiarEstado(Long id, EstadoReserva nuevoEstado, String usuario) {
+        Reserva reserva = reservaRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Reserva no encontrada con id: " + id));
 
-        // Validar transición de estados
-        validarTransicion(estadoActual, nuevoEstado);
+        validarTransicion(reserva.getEstado(), nuevoEstado);
 
         reserva.setEstado(nuevoEstado);
         reserva.setActualizadoPor(usuario);
 
-        return reservaRepository.save(reserva);
+        Reserva actualizada = reservaRepository.save(reserva);
+        return reservaMapper.toResponse(actualizada);
     }
 
-    // ==================== CANCELAR ====================
     @Transactional
-    public Reserva cancelar(Long id, String usuario) {
+    public ReservaResponse cancelar(Long id, String usuario) {
         return cambiarEstado(id, EstadoReserva.CANCELADA, usuario);
     }
 
-    // ==================== VALIDACIÓN DE TRANSICIONES ====================
     private void validarTransicion(EstadoReserva actual, EstadoReserva nuevo) {
-        // No se puede modificar una reserva ya finalizada
         if (actual == EstadoReserva.CHECKOUT || actual == EstadoReserva.CANCELADA) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
                     "No se puede cambiar el estado de una reserva finalizada o cancelada");
         }
 
-        // Regla del caso: No se puede hacer check-in sin CONFIRMAR
-        if (nuevo == EstadoReserva.CHECKIN_PENDIENTE || nuevo == EstadoReserva.EN_ESTADIA) {
-            if (actual != EstadoReserva.CONFIRMADA && actual != EstadoReserva.CHECKIN_PENDIENTE) {
-                throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                        "No se puede hacer check-in. La reserva debe estar en estado CONFIRMADA");
-            }
+        if ((nuevo == EstadoReserva.CHECKIN_PENDIENTE || nuevo == EstadoReserva.EN_ESTADIA)
+                && actual != EstadoReserva.CONFIRMADA && actual != EstadoReserva.CHECKIN_PENDIENTE) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                    "No se puede hacer check-in. La reserva debe estar en estado CONFIRMADA");
         }
 
-        // Transiciones permitidas (simplificadas pero seguras)
         boolean esValida = switch (actual) {
             case CREADA -> nuevo == EstadoReserva.CONFIRMADA || nuevo == EstadoReserva.CANCELADA;
             case CONFIRMADA -> nuevo == EstadoReserva.CHECKIN_PENDIENTE
