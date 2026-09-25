@@ -1,0 +1,14 @@
+cl\duoc\andesstay\bff\MsAndesstayBffApplication.class
+cl\duoc\andesstay\bff\dto\ReservaResponse$ReservaResponseBuilder.class
+cl\duoc\andesstay\bff\model\Reserva.class
+cl\duoc\andesstay\bff\controller\ReservaController.class
+cl\duoc\andesstay\bff\service\ReservaService$1.class
+cl\duoc\andesstay\bff\model\Reserva$ReservaBuilder.class
+cl\duoc\andesstay\bff\dto\ReservaResponse.class
+cl\duoc\andesstay\bff\repository\ReservaRepository.class
+cl\duoc\andesstay\bff\dto\CrearReservaRequest.class
+cl\duoc\andesstay\bff\dto\CambioEstadoRequest.class
+cl\duoc\andesstay\bff\service\ReservaService.class
+cl\duoc\andesstay\bff\config\SecurityConfig.class
+cl\duoc\andesstay\bff\model\EstadoReserva.class
+cl\duoc\andesstay\bff\mapper\ReservaMapper.class
