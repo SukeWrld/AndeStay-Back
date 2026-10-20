@@ -1,9 +1,15 @@
 cl\duoc\andesstay\bff\MsAndesstayBffApplication.class
+<<<<<<< HEAD
 cl\duoc\andesstay\bff\config\RabbitMQConfig.class
 cl\duoc\andesstay\bff\dto\ReservaResponse$ReservaResponseBuilder.class
 cl\duoc\andesstay\bff\model\Reserva.class
 cl\duoc\andesstay\bff\controller\ReservaController.class
 cl\duoc\andesstay\bff\service\ReservaEventPublisher.class
+=======
+cl\duoc\andesstay\bff\dto\ReservaResponse$ReservaResponseBuilder.class
+cl\duoc\andesstay\bff\model\Reserva.class
+cl\duoc\andesstay\bff\controller\ReservaController.class
+>>>>>>> 5b7408ccd899582627fe1c2b7b5edf6a105b4576
 cl\duoc\andesstay\bff\service\ReservaService$1.class
 cl\duoc\andesstay\bff\model\Reserva$ReservaBuilder.class
 cl\duoc\andesstay\bff\dto\ReservaResponse.class
@@ -12,7 +18,12 @@ cl\duoc\andesstay\bff\dto\CrearReservaRequest.class
 cl\duoc\andesstay\bff\dto\CambioEstadoRequest.class
 cl\duoc\andesstay\bff\service\ReservaService.class
 cl\duoc\andesstay\bff\config\SecurityConfig.class
+<<<<<<< HEAD
 cl\duoc\andesstay\bff\dto\ReservaEvento.class
 cl\duoc\andesstay\bff\model\EstadoReserva.class
 cl\duoc\andesstay\bff\mapper\ReservaMapper.class
 cl\duoc\andesstay\bff\dto\ReservaEvento$ReservaEventoBuilder.class
+=======
+cl\duoc\andesstay\bff\model\EstadoReserva.class
+cl\duoc\andesstay\bff\mapper\ReservaMapper.class
+>>>>>>> 5b7408ccd899582627fe1c2b7b5edf6a105b4576

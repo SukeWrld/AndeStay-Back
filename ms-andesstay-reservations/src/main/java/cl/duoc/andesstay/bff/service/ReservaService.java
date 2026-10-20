@@ -22,7 +22,10 @@ public class ReservaService {
 
     private final ReservaRepository reservaRepository;
     private final ReservaMapper reservaMapper;
+<<<<<<< HEAD
     private final ReservaEventPublisher reservaEventPublisher;
+=======
+>>>>>>> 5b7408ccd899582627fe1c2b7b5edf6a105b4576
 
     @Transactional
     public ReservaResponse crear(CrearReservaRequest request, String usuario) {
@@ -48,7 +51,10 @@ public class ReservaService {
         reserva.setCreadoPor(usuario);
 
         Reserva guardada = reservaRepository.save(reserva);
+<<<<<<< HEAD
         reservaEventPublisher.publicarCreada(guardada);
+=======
+>>>>>>> 5b7408ccd899582627fe1c2b7b5edf6a105b4576
         return reservaMapper.toResponse(guardada);
     }
 
@@ -87,12 +93,18 @@ public class ReservaService {
 
         validarTransicion(reserva.getEstado(), nuevoEstado);
 
+<<<<<<< HEAD
         EstadoReserva estadoAnterior = reserva.getEstado();
+=======
+>>>>>>> 5b7408ccd899582627fe1c2b7b5edf6a105b4576
         reserva.setEstado(nuevoEstado);
         reserva.setActualizadoPor(usuario);
 
         Reserva actualizada = reservaRepository.save(reserva);
+<<<<<<< HEAD
         reservaEventPublisher.publicarEstadoCambiado(actualizada, estadoAnterior);
+=======
+>>>>>>> 5b7408ccd899582627fe1c2b7b5edf6a105b4576
         return reservaMapper.toResponse(actualizada);
     }
 

@@ -1,5 +1,6 @@
 # AndeStay-Back
 BFF en Spring Boot con Spring Security y validación de JWT Azure AD
+<<<<<<< HEAD
 
 ## RabbitMQ (servicio de reservas)
 
@@ -24,3 +25,5 @@ El servicio publica mensajes JSON en el exchange durable `andesstay.reservas`:
 Ambos tipos quedan enlazados a la cola durable `andesstay.reservas.events`. El
 payload incluye un identificador único de evento, el ID de la reserva, unidad,
 estado anterior/nuevo y fechas; no incluye datos personales del huésped.
+=======
+>>>>>>> 5b7408ccd899582627fe1c2b7b5edf6a105b4576

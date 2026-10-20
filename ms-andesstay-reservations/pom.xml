@@ -35,12 +35,15 @@
             <artifactId>spring-boot-starter-data-mongodb</artifactId>
         </dependency>
 
+<<<<<<< HEAD
         <!-- RabbitMQ -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-amqp</artifactId>
         </dependency>
 
+=======
+>>>>>>> 5b7408ccd899582627fe1c2b7b5edf6a105b4576
         <!-- Security + OAuth2 Resource Server -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
