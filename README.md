@@ -1,20 +1,17 @@
 # AndeStay-Back
 BFF en Spring Boot con Spring Security y validación de JWT Azure AD
-<<<<<<< HEAD
 
 ## RabbitMQ (servicio de reservas)
 
-Desde la carpeta `ms-andesstay-reservations`, levanta RabbitMQ con Docker Desktop:
+El servicio se conecta al broker remoto de CloudAMQP mediante su URL AMQPS.
+Configura la variable de entorno `CLOUDAMQP_URL` con la URL de conexión que
+entrega CloudAMQP en el entorno donde despliegues la aplicación. Guárdala como
+secreto del entorno de despliegue; no la subas al repositorio ni la compartas,
+porque incluye credenciales.
 
-```powershell
-docker compose up -d
-```
-
-La consola de administración queda disponible en `http://localhost:15672`. En un
-entorno local, las credenciales predeterminadas son `andesstay` / `andesstay_local`;
-se pueden reemplazar con las variables `RABBITMQ_USERNAME` y `RABBITMQ_PASSWORD`.
-
-Inicia el servicio desde esa misma carpeta con `.\mvnw.cmd spring-boot:run`.
+Inicia el servicio desde la carpeta `ms-andesstay-reservations` con
+`.\mvnw.cmd spring-boot:run`. La variable `CLOUDAMQP_URL` debe estar configurada
+antes de iniciarlo.
 El servicio publica mensajes JSON en el exchange durable `andesstay.reservas`:
 
 | Acción | Routing key | Tipo de evento |
@@ -25,5 +22,3 @@ El servicio publica mensajes JSON en el exchange durable `andesstay.reservas`:
 Ambos tipos quedan enlazados a la cola durable `andesstay.reservas.events`. El
 payload incluye un identificador único de evento, el ID de la reserva, unidad,
 estado anterior/nuevo y fechas; no incluye datos personales del huésped.
-=======
->>>>>>> 5b7408ccd899582627fe1c2b7b5edf6a105b4576
