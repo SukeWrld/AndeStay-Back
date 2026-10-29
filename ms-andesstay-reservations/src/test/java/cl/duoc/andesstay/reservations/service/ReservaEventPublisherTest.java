@@ -6,6 +6,7 @@ import cl.duoc.andesstay.reservations.model.EstadoReserva;
 import cl.duoc.andesstay.reservations.model.Reserva;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.kafka.core.KafkaTemplate;
 
 import java.time.LocalDate;
 
@@ -19,14 +20,15 @@ import static org.mockito.ArgumentCaptor.forClass;
 class ReservaEventPublisherTest {
 
     private final RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
-    private final ReservaEventPublisher publisher = new ReservaEventPublisher(rabbitTemplate);
+    private final KafkaTemplate<String, ReservaEvento> kafkaTemplate = mock(KafkaTemplate.class);
+    private final ReservaEventPublisher publisher = new ReservaEventPublisher(rabbitTemplate, kafkaTemplate);
 
     @Test
     void publicaEventoDeReservaCreada() {
         Reserva reserva = reserva(EstadoReserva.CREADA);
         var eventoCaptor = forClass(ReservaEvento.class);
 
-        publisher.publicarCreada(reserva);
+        publisher.publicarCreada(reserva, "operador");
 
         verify(rabbitTemplate).convertAndSend(
                 eq(RabbitMQConfig.RESERVAS_EXCHANGE),
@@ -45,7 +47,7 @@ class ReservaEventPublisherTest {
         Reserva reserva = reserva(EstadoReserva.CONFIRMADA);
         var eventoCaptor = forClass(ReservaEvento.class);
 
-        publisher.publicarEstadoCambiado(reserva, EstadoReserva.CREADA);
+        publisher.publicarEstadoCambiado(reserva, EstadoReserva.CREADA, "operador");
 
         verify(rabbitTemplate).convertAndSend(
                 eq(RabbitMQConfig.RESERVAS_EXCHANGE),
@@ -62,6 +64,7 @@ class ReservaEventPublisherTest {
         return Reserva.builder()
                 .id("reserva-123")
                 .unidadId(42L)
+                .emailHuesped("huesped@example.com")
                 .estado(estado)
                 .fechaEntrada(LocalDate.of(2026, 11, 1))
                 .fechaSalida(LocalDate.of(2026, 11, 5))

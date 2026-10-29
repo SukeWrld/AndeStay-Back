@@ -1,0 +1,148 @@
+name: andesstay-apps
+
+services:
+  mongodb:
+    image: mongo:8.0
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+    networks:
+      - andesstay
+
+  bff:
+    image: andesstay/ms-andesstay-bff:local
+    build:
+      context: ../..
+      dockerfile: infra/apps/Dockerfile
+      args:
+        SERVICE_DIR: ms-andesstay-bff
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      AZURE_AD_ISSUER_URI: ${AZURE_AD_ISSUER_URI:-}
+      AZURE_AD_API_AUDIENCE: ${AZURE_AD_API_AUDIENCE:-}
+    networks:
+      - andesstay
+
+  reservations:
+    image: andesstay/ms-andesstay-reservations:local
+    build:
+      context: ../..
+      dockerfile: infra/apps/Dockerfile
+      args:
+        SERVICE_DIR: ms-andesstay-reservations
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: "8081"
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/andesstay}
+      AZURE_AD_ISSUER_URI: ${AZURE_AD_ISSUER_URI:-}
+      AZURE_AD_API_AUDIENCE: ${AZURE_AD_API_AUDIENCE:-}
+      RABBITMQ_URL: amqp://${RABBITMQ_USERNAME:-andesstay}:${RABBITMQ_PASSWORD:-andesstay_local}@rabbitmq1:5672/%2F
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka1:29092,kafka2:29092,kafka3:29092
+    expose:
+      - "8081"
+    networks:
+      - andesstay
+
+  catalog:
+    image: andesstay/ms-andesstay-catalog:local
+    build:
+      context: ../..
+      dockerfile: infra/apps/Dockerfile
+      args:
+        SERVICE_DIR: ms-andesstay-catalog
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      SERVER_PORT: "8083"
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/andesstay}
+      AZURE_AD_ISSUER_URI: ${AZURE_AD_ISSUER_URI:-}
+      AZURE_AD_API_AUDIENCE: ${AZURE_AD_API_AUDIENCE:-}
+    expose:
+      - "8083"
+    networks:
+      - andesstay
+
+  notify:
+    image: andesstay/ms-andesstay-notify:local
+    build:
+      context: ../..
+      dockerfile: infra/apps/Dockerfile
+      args:
+        SERVICE_DIR: ms-andesstay-notify
+    restart: unless-stopped
+    environment:
+      SPRING_RABBITMQ_ADDRESSES: rabbitmq1:5672,rabbitmq2:5672
+      SPRING_RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-andesstay}
+      SPRING_RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-andesstay_local}
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      ANDESSTAY_MAIL_FROM: ${ANDESSTAY_MAIL_FROM:-}
+      ANDESSTAY_HOUSEKEEPING_WEBHOOK_URL: ${ANDESSTAY_HOUSEKEEPING_WEBHOOK_URL:-}
+    networks:
+      - andesstay
+
+  audit:
+    image: andesstay/ms-andesstay-audit:local
+    build:
+      context: ../..
+      dockerfile: infra/apps/Dockerfile
+      args:
+        SERVICE_DIR: ms-andesstay-audit
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/andesstay}
+      AZURE_AD_ISSUER_URI: ${AZURE_AD_ISSUER_URI:-}
+      AZURE_AD_API_AUDIENCE: ${AZURE_AD_API_AUDIENCE:-}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka1:29092,kafka2:29092,kafka3:29092
+    expose:
+      - "8084"
+    networks:
+      - andesstay
+
+  report:
+    image: andesstay/ms-andesstay-report:local
+    build:
+      context: ../..
+      dockerfile: infra/apps/Dockerfile
+      args:
+        SERVICE_DIR: ms-andesstay-report
+    restart: unless-stopped
+    depends_on:
+      mongodb:
+        condition: service_healthy
+    environment:
+      MONGODB_URI: ${MONGODB_URI:-mongodb://mongodb:27017/andesstay}
+      AZURE_AD_ISSUER_URI: ${AZURE_AD_ISSUER_URI:-}
+      AZURE_AD_API_AUDIENCE: ${AZURE_AD_API_AUDIENCE:-}
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka1:29092,kafka2:29092,kafka3:29092
+    expose:
+      - "8085"
+    networks:
+      - andesstay
+
+networks:
+  andesstay:
+    name: andesstay-network
+    external: true
+
+volumes:
+  mongodb_data:

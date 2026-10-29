@@ -9,6 +9,7 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.amqp.support.converter.MessageConverter;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -23,15 +24,16 @@ public class RabbitMQConfig {
     public static final String RESERVA_ESTADO_CAMBIADO_ROUTING_KEY = "reserva.estado-cambiado";
 
     @Bean
-    public ConnectionFactory rabbitConnectionFactory(@Value("${cloudamqp.url}") URI cloudAmqpUri)
+    public ConnectionFactory rabbitConnectionFactory(@Value("${rabbitmq.url}") URI rabbitMqUri)
             throws Exception {
-        if (!"amqps".equalsIgnoreCase(cloudAmqpUri.getScheme())) {
-            throw new IllegalArgumentException("CloudAMQP must use an amqps:// URL");
+        String scheme = rabbitMqUri.getScheme();
+        if (!"amqp".equalsIgnoreCase(scheme) && !"amqps".equalsIgnoreCase(scheme)) {
+            throw new IllegalArgumentException("RabbitMQ URL must use an amqp:// or amqps:// URL");
         }
 
         com.rabbitmq.client.ConnectionFactory rabbitClientConnectionFactory =
                 new com.rabbitmq.client.ConnectionFactory();
-        rabbitClientConnectionFactory.setUri(cloudAmqpUri);
+        rabbitClientConnectionFactory.setUri(rabbitMqUri);
         return new CachingConnectionFactory(rabbitClientConnectionFactory);
     }
 
@@ -46,14 +48,18 @@ public class RabbitMQConfig {
     }
 
     @Bean
-    public Binding reservaCreadaBinding(Queue reservasEventsQueue, TopicExchange reservasExchange) {
+    public Binding reservaCreadaBinding(
+            @Qualifier("reservasEventsQueue") Queue reservasEventsQueue,
+            @Qualifier("reservasExchange") TopicExchange reservasExchange) {
         return BindingBuilder.bind(reservasEventsQueue)
                 .to(reservasExchange)
                 .with(RESERVA_CREADA_ROUTING_KEY);
     }
 
     @Bean
-    public Binding reservaEstadoCambiadoBinding(Queue reservasEventsQueue, TopicExchange reservasExchange) {
+    public Binding reservaEstadoCambiadoBinding(
+            @Qualifier("reservasEventsQueue") Queue reservasEventsQueue,
+            @Qualifier("reservasExchange") TopicExchange reservasExchange) {
         return BindingBuilder.bind(reservasEventsQueue)
                 .to(reservasExchange)
                 .with(RESERVA_ESTADO_CAMBIADO_ROUTING_KEY);

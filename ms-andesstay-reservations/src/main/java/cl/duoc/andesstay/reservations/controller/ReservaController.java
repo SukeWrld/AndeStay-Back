@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -23,9 +25,10 @@ public class ReservaController {
     private final ReservaService reservaService;
 
     @PostMapping
-    public ResponseEntity<ReservaResponse> crear(@Valid @RequestBody CrearReservaRequest request) {
-        // Por ahora hardcodeado. Después lo sacamos del JWT
-        String usuario = "sistema";
+    public ResponseEntity<ReservaResponse> crear(
+            @Valid @RequestBody CrearReservaRequest request,
+            @AuthenticationPrincipal Jwt jwt) {
+        String usuario = usuario(jwt);
         ReservaResponse response = reservaService.crear(request, usuario);
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
@@ -47,16 +50,23 @@ public class ReservaController {
     @PutMapping("/{id}/status")
     public ResponseEntity<ReservaResponse> cambiarEstado(
             @PathVariable String id,
-            @Valid @RequestBody CambioEstadoRequest request
+            @Valid @RequestBody CambioEstadoRequest request,
+            @AuthenticationPrincipal Jwt jwt
     ) {
-        String usuario = "sistema";
+        String usuario = usuario(jwt);
         ReservaResponse response = reservaService.cambiarEstado(id, request.getStatus(), usuario);
         return ResponseEntity.ok(response);
     }
 
     @PutMapping("/{id}/cancel")
-    public ResponseEntity<ReservaResponse> cancelar(@PathVariable String id) {
-        String usuario = "sistema";
+    public ResponseEntity<ReservaResponse> cancelar(
+            @PathVariable String id,
+            @AuthenticationPrincipal Jwt jwt) {
+        String usuario = usuario(jwt);
         return ResponseEntity.ok(reservaService.cancelar(id, usuario));
+    }
+
+    private String usuario(Jwt jwt) {
+        return jwt == null ? "sistema" : jwt.getSubject();
     }
 }

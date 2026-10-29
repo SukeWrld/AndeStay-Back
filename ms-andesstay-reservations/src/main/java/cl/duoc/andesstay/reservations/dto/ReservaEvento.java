@@ -13,6 +13,7 @@ public class ReservaEvento {
 
     String eventId;
     String eventType;
+    String actor;
     String reservaId;
     Long unidadId;
     EstadoReserva estadoAnterior;

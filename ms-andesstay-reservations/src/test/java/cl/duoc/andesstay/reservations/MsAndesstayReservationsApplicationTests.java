@@ -3,7 +3,7 @@ package cl.duoc.andesstay.reservations;
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
-@SpringBootTest(properties = "cloudamqp.url=amqps://test:test@localhost/vhost")
+@SpringBootTest(properties = "rabbitmq.url=amqp://andesstay:andesstay_local@localhost:5672/%2F")
 class MsAndesstayReservationsApplicationTests {
 
 	@Test

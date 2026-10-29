@@ -1,0 +1,4 @@
+-------------------------------------------------------------------------------
+Test set: cl.duoc.andesstay.reservations.MsAndesstayReservationsApplicationTests
+-------------------------------------------------------------------------------
+Tests run: 1, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 8.451 s -- in cl.duoc.andesstay.reservations.MsAndesstayReservationsApplicationTests

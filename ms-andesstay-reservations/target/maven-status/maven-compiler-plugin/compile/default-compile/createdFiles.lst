@@ -1,1 +1,3 @@
 cl\duoc\andesstay\reservations\service\ReservaService$1.class
+cl\duoc\andesstay\reservations\config\NotificationTopologyConfig.class
+cl\duoc\andesstay\reservations\config\JwtDecoderConfig.class

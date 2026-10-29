@@ -9,7 +9,6 @@ import cl.duoc.andesstay.reservations.repository.ReservaRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
@@ -24,7 +23,6 @@ public class ReservaService {
     private final ReservaMapper reservaMapper;
     private final ReservaEventPublisher reservaEventPublisher;
 
-    @Transactional
     public ReservaResponse crear(CrearReservaRequest request, String usuario) {
         if (request.getFechaSalida().isBefore(request.getFechaEntrada()) ||
             request.getFechaSalida().isEqual(request.getFechaEntrada())) {
@@ -46,13 +44,13 @@ public class ReservaService {
         Reserva reserva = reservaMapper.toEntity(request);
         reserva.setEstado(EstadoReserva.CREADA);
         reserva.setCreadoPor(usuario);
+        reserva.onCreate();
 
         Reserva guardada = reservaRepository.save(reserva);
-        reservaEventPublisher.publicarCreada(guardada);
+        reservaEventPublisher.publicarCreada(guardada, usuario);
         return reservaMapper.toResponse(guardada);
     }
 
-    @Transactional(readOnly = true)
     public ReservaResponse obtenerPorId(String id) {
         Reserva reserva = reservaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -60,7 +58,6 @@ public class ReservaService {
         return reservaMapper.toResponse(reserva);
     }
 
-    @Transactional(readOnly = true)
     public List<ReservaResponse> listar(EstadoReserva estado, LocalDate from, LocalDate to) {
         List<Reserva> reservas;
 
@@ -79,7 +76,6 @@ public class ReservaService {
                 .collect(Collectors.toList());
     }
 
-    @Transactional
     public ReservaResponse cambiarEstado(String id, EstadoReserva nuevoEstado, String usuario) {
         Reserva reserva = reservaRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
@@ -90,13 +86,13 @@ public class ReservaService {
         EstadoReserva estadoAnterior = reserva.getEstado();
         reserva.setEstado(nuevoEstado);
         reserva.setActualizadoPor(usuario);
+        reserva.onUpdate();
 
         Reserva actualizada = reservaRepository.save(reserva);
-        reservaEventPublisher.publicarEstadoCambiado(actualizada, estadoAnterior);
+        reservaEventPublisher.publicarEstadoCambiado(actualizada, estadoAnterior, usuario);
         return reservaMapper.toResponse(actualizada);
     }
 
-    @Transactional
     public ReservaResponse cancelar(String id, String usuario) {
         return cambiarEstado(id, EstadoReserva.CANCELADA, usuario);
     }
