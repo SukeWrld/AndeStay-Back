@@ -4,6 +4,7 @@ import cl.duoc.andesstay.reservations.config.RabbitMQConfig;
 import cl.duoc.andesstay.reservations.dto.ReservaEvento;
 import cl.duoc.andesstay.reservations.model.EstadoReserva;
 import cl.duoc.andesstay.reservations.model.Reserva;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.Test;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -15,18 +16,23 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 import static org.mockito.ArgumentCaptor.forClass;
 
 class ReservaEventPublisherTest {
 
     private final RabbitTemplate rabbitTemplate = mock(RabbitTemplate.class);
-    private final KafkaTemplate<String, ReservaEvento> kafkaTemplate = mock(KafkaTemplate.class);
-    private final ReservaEventPublisher publisher = new ReservaEventPublisher(rabbitTemplate, kafkaTemplate);
+    private final KafkaTemplate<String, String> kafkaTemplate = mock(KafkaTemplate.class);
+    private final ObjectMapper objectMapper = mock(ObjectMapper.class);
+    private final ReservaEventPublisher publisher =
+            new ReservaEventPublisher(rabbitTemplate, kafkaTemplate, objectMapper);
 
     @Test
-    void publicaEventoDeReservaCreada() {
+    void publicaEventoDeReservaCreada() throws Exception {
         Reserva reserva = reserva(EstadoReserva.CREADA);
         var eventoCaptor = forClass(ReservaEvento.class);
+        when(objectMapper.writeValueAsString(org.mockito.ArgumentMatchers.any(ReservaEvento.class)))
+                .thenReturn("{\"eventType\":\"RESERVA_CREADA\"}");
 
         publisher.publicarCreada(reserva, "operador");
 
@@ -40,6 +46,11 @@ class ReservaEventPublisherTest {
         assertEquals("reserva-123", evento.getReservaId());
         assertNull(evento.getEstadoAnterior());
         assertEquals(EstadoReserva.CREADA, evento.getEstado());
+        verify(kafkaTemplate).send(
+                "reservations.events",
+                "reserva-123",
+                "{\"eventType\":\"RESERVA_CREADA\"}"
+        );
     }
 
     @Test

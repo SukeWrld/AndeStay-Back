@@ -4,6 +4,8 @@ import cl.duoc.andesstay.reservations.config.RabbitMQConfig;
 import cl.duoc.andesstay.reservations.dto.ReservaEvento;
 import cl.duoc.andesstay.reservations.model.EstadoReserva;
 import cl.duoc.andesstay.reservations.model.Reserva;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.kafka.core.KafkaTemplate;
@@ -18,7 +20,8 @@ import java.util.UUID;
 public class ReservaEventPublisher {
 
     private final RabbitTemplate rabbitTemplate;
-    private final KafkaTemplate<String, ReservaEvento> kafkaTemplate;
+    private final KafkaTemplate<String, String> kafkaTemplate;
+    private final ObjectMapper objectMapper;
 
     public void publicarCreada(Reserva reserva, String actor) {
         publicar(reserva, null, reserva.getEstado(), "RESERVA_CREADA",
@@ -52,7 +55,12 @@ public class ReservaEventPublisher {
                 .build();
 
         rabbitTemplate.convertAndSend(RabbitMQConfig.RESERVAS_EXCHANGE, routingKey, evento);
-        kafkaTemplate.send("reservations.events", evento.getReservaId(), evento);
+        try {
+            String payload = objectMapper.writeValueAsString(evento);
+            kafkaTemplate.send("reservations.events", evento.getReservaId(), payload);
+        } catch (JsonProcessingException exception) {
+            throw new IllegalStateException("No se pudo serializar el evento de reserva para Kafka", exception);
+        }
         String subject = "RESERVA_CREADA".equals(eventType)
                 ? "Comprobante de reserva AndeStay"
                 : "Actualizacion de tu reserva AndeStay";
